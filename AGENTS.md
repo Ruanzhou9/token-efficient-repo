@@ -17,6 +17,7 @@
 |------|------|----------|
 | `references/agent-md-template.md` | AGENTS.md 模板，可直接复制使用 | ⚠️ 需要时读 |
 | `references/audit-example.md` | 审计报告示例 | ⚠️ 需要时读 |
+| `references/token-estimation-report.md` | 真实 Token 扫描与成本对比报告（含 128 skill 实测数据） | ⚠️ 需要时读 |
 
 ## 工具脚本
 

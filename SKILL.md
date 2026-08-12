@@ -13,7 +13,8 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 |------|-----------|
 | 整个 SKILL.md | 首次使用时通读 |
 | `references/agent-md-template.md` | 需要加 AGENTS.md 时 |
-| `references/audit-example.md` | 需要参考审计报告格式时 |
+| `references/audit-example.md` | 需要参考审计报告格式时 | ⚠️ 需要时读 |
+| `references/token-estimation-report.md` | 需要参考真实 Token 成本数据与财务对比时 | ⚠️ 需要时读 |
 | `scripts/audit.sh` | 需要快速扫描项目文件结构时 |
 
 ## 核心原则
