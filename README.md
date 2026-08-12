@@ -29,6 +29,16 @@
 | 必读 KB | 50 KB | 15 KB | ~70% |
 | 估算 token | ~15K | ~5K | ~66% |
 
+## 真实案例：Hermes 128 Skill 全库扫描
+
+作为参考，对 Hermes 全库 128 个 skill 做了完整安全扫描和 Token 估算：
+
+- **全量注入**：~279.6k tokens / 次对话
+- **按需加载**：~5–20k tokens / 次对话（节省 93–98%）
+- **财务对比**：日 50 轮对话，全量注入约 $7/天，按需加载约 $0.15–0.50/天
+
+详见 [`references/token-estimation-report.md`](references/token-estimation-report.md)。
+
 ## 安装
 
 ```bash
