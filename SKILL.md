@@ -1,11 +1,20 @@
 ---
 name: token-efficient-repo
-description: "优化开源项目结构，让其他 agent 和开发者使用项目时 token 消耗最低。当用户说「优化一下我的项目，让它对 agent 省 token」「帮我让这个 repo 更省 token」「给项目加 AGENTS.md」「做 token-efficient 优化」时使用。也适用于用户说「别人用我的项目 token 太高」「怎么让 agent 读我的项目更快」。"
+description: 当用户要优化项目结构节省 agent token 消耗时使用。
 ---
 
 # Token-Efficient Repo — 让项目对 agent 省 token
 
 > 优化开源项目的结构，使得任何 agent（Hermes / Codex / Claude Code / OpenCode / Cursor）在阅读和使用该项目时，token 消耗最小化。
+
+## 何时读哪个文件
+
+| 文件 | 什么时候读 |
+|------|-----------|
+| 整个 SKILL.md | 首次使用时通读 |
+| `references/agent-md-template.md` | 需要加 AGENTS.md 时 |
+| `references/audit-example.md` | 需要参考审计报告格式时 |
+| `scripts/audit.sh` | 需要快速扫描项目文件结构时 |
 
 ## 核心原则
 
@@ -30,7 +39,7 @@ description: "优化开源项目结构，让其他 agent 和开发者使用项�
 | 检查项 | 问题 | 严重程度 |
 |--------|------|----------|
 | 大文件（>10KB）无内部导航 | agent 必须从头读到尾 | 🔴 高 |
-| README 混着装说明 + 使用方法 + API 文档 | agent 读完 README 才能判断是否要装 | 🔴 高 |
+| README 混装着装说明 + 使用方法 + API 文档 | agent 读完 README 才能判断是否要装 | 🔴 高 |
 | SKILL.md > 500 行且无分层 | agent 加载整个 skill 才找到入口 | 🔴 高 |
 | 无 AGENTS.md | agent 没有入口导航，只能遍历所有文件 | 🔴 高 |
 | 宣传页/HTML 在项目根目录 | agent 可能误读 `promo.html` / `index.html` | 🟡 中 |
@@ -46,7 +55,31 @@ description: "优化开源项目结构，让其他 agent 和开发者使用项�
 | 类和函数签名无类型注释 | agent 读实现体以理解接口 |
 | 文档和代码分离太远 | agent 读完文档再去代码里找对应 |
 
-**1.3 输出审计报告格式**
+**1.3 快速审计脚本**
+
+如果项目有 shell 环境，运行 `scripts/audit.sh` 获取文件大小和结构统计：
+
+```bash
+bash scripts/audit.sh /path/to/project
+```
+
+输出示例：
+```
+📊 文件统计
+  总文件数: 47
+  大文件 (>10KB): 3
+    - src/main.ts (32KB) ⚠️ 建议加内部导航
+    - README.md (15KB) ⚠️ 建议拆分为 README + docs/
+    - package-lock.json (120KB) 🔇 可跳过
+
+📁 结构
+  .gitignore        ✅ 有
+  AGENTS.md         ❌ 缺失（建议加）
+  LICENSE           ✅ 有
+  README.md         ✅ 有
+```
+
+**1.4 输出审计报告格式**
 
 ```markdown
 ## Token 审计报告：{项目名}
@@ -70,37 +103,7 @@ description: "优化开源项目结构，让其他 agent 和开发者使用项�
 
 **2.1 加 AGENTS.md（最高优先级）**
 
-在项目根目录创建 `AGENTS.md`，格式：
-
-```markdown
-# AGENTS.md — {项目名} 项目导航
-
-## 一句话
-{项目 1 句话说明}
-
-## 核心入口（agent 首读，按顺序）
-| 文件 | 作用 | 是否必读 |
-|------|------|----------|
-| `{入口文件}` | {作用} | ✅ 必读 |
-
-## 核心逻辑
-| 文件 | 作用 | 是否必读 |
-|------|------|----------|
-| `{核心模块}` | {作用} | ⚠️ 需要时读 |
-
-## 可直接跳过的文件
-| 文件 | 理由 |
-|------|------|
-| `{文件}` | {理由} |
-
-## 依赖清单
-{一行一个依赖}
-
-## 快速验证
-```bash
-{一行命令验证项目是否可用}
-```
-```
+在项目根目录创建 `AGENTS.md`，格式见 `references/agent-md-template.md`。
 
 **2.2 精简 README（高优先级）**
 
@@ -187,6 +190,24 @@ description: "优化开源项目结构，让其他 agent 和开发者使用项�
 3. 精简 README → 顶部加「10 秒速览」
 4. 移 promo.html → `docs/promo.html`
 5. 验证 → 首读文件从 15 个→ 5 个，token 节省约 60%
+
+**输入：** 「优化我的 Node.js 项目 /path/to/project」
+
+**输出：**
+1. 审计 → 发现：无 AGENTS.md、package.json 的 description 为空白、测试文件在根目录
+2. 加 AGENTS.md → 入口 `src/index.js`，跳过 `node_modules/`、`__tests__/`
+3. 补 package.json 的 description 字段
+4. 移测试文件入 `__tests__/` 目录
+5. 验证 → 首读文件从 12 个→ 4 个，token 节省约 65%
+
+**输入：** 「优化我的 Python 项目 /path/to/project」
+
+**输出：**
+1. 审计 → 发现：无 AGENTS.md、README 混装着装说明+API 文档、pyproject.toml 无 description
+2. 加 AGENTS.md → 入口 `src/core.py`，跳过 `tests/`、`venv/`
+3. 精简 README → 顶部加「10 秒速览」，API 文档移入 `docs/api.md`
+4. 补 pyproject.toml 的 description 字段
+5. 验证 → 首读文件从 18 个→ 6 个，token 节省约 65%
 
 ## 边界与盲点
 
