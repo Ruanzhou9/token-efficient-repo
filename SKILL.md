@@ -36,11 +36,17 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 
 在开始优化之前，先检查项目是否安全可信。详见 `references/security-scan-guide.md`。
 
-**1.1 快速安全检查**
+**1.1 安全检查（快速脚本 + 深度 SkillSpector 双路径）**
 
 ```bash
+# 快速粗扫（本项目的轻量脚本，秒级，无需网络）
 bash scripts/security-scan.sh /path/to/project
+
+# 深度扫描（NVIDIA SkillSpector 引擎，先已在机更佳；Hermes 环境必须 env -u PYTHONPATH）
+env -u PYTHONPATH skillspector scan /path/to/project/ --no-llm
 ```
+
+> 两步都做更稳妥：快速脚本查「本库常见危险模式」，SkillSpector 查「NVIDIA 全量规则库 + 供应链」。若 SkillSpector 未安装，完整安装命令见下方第 5.2 步。
 
 **1.2 安全检查清单**
 
@@ -204,16 +210,44 @@ bash scripts/audit.sh /path/to/project
 bash scripts/security-scan.sh /path/to/skill
 ```
 
-**5.2 深度安全检查（用 SkillSpector）**
+**5.2 深度安全检查（用 NVIDIA SkillSpector）**
+
+> SkillSpector 是 NVIDIA 官方开源的 Agent Skill 安全扫描器（14.4k ⭐）。**本机通常已装好**，先检测，缺失才安装。
 
 ```bash
-# 安装（需先装 uv）
-env -u PYTHONPATH uv tool install --python 3.12 \
-  "git+https://github.com/NVIDIA/skillspector.git"
+# a. 检测是否已安装（Hermes 环境必须 env -u PYTHONPATH，否则 pydantic 冲突报 ImportError）
+if command -v skillspector >/dev/null 2>&1; then
+  echo "✅ 已安装: $(env -u PYTHONPATH skillspector --version)"
+else
+  echo "未安装，执行安装（需先装 uv）..."
+  env -u PYTHONPATH uv tool install --python 3.12 \
+    "git+https://github.com/NVIDIA/skillspector.git"
+fi
 
-# 扫描
+# b. 扫描单个 skill
 env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
+
+# c. 递归扫描整库
+env -u PYTHONPATH skillspector scan ~/.hermes/skills/ --recursive --no-llm
 ```
+
+**5.2.1 结果解读（扫描后必须人工核验，勿盲信总分）**
+
+SkillSpector 输出一个 0-100 的风险分 + HIGH/MEDIUM/LOW 级别。判定规则：
+
+| 总分区间 | 建议动作 |
+|---------|---------|
+| `< 35` | ✅ 可信，可安装（仍需过一遍清单） |
+| `35–60` | ⚠️ 看具体命中——多数是规范建议（无 permissions 字段、npx 未 pin 版本），人工核实后通常可接受 |
+| `> 60` | 🔴 逐条人工核查 HIGH/CRITICAL 命中，确认涉真实危险代码（eval/外泄/敏感文件）才拒绝；若全为误报则记录后通过 |
+
+实际命中类型（结合本库扫描实测）：HIGH 评分里大部分是「无 permissions 声明」「含可执行脚本待审查」等规范项，**不是真危险**。只有命中「硬编码 API Key」「外发 curl 到非官方地址」「eval(用户输入)」等才真拒绝。
+
+**5.2.2 判定三连问（每遇 HIGH 自答）**
+1. 这一条命中是否指向**真实可控的资产风险**（凭据外泄 / 任意命令执行 / 数据外传）？
+2. 命中所在的文件**作者是否可信、依赖是否 pin 版本**？
+3. 有无官方说明该行为**确实需要**（如视频渲染需要 ffmpeg 调用）？
+三问全「安全」才放行，否则拒绝或要求改进。
 
 **5.3 安全检查清单**
 

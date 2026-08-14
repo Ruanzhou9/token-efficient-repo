@@ -33,19 +33,27 @@ bash scripts/security-scan.sh --recursive ~/.hermes/skills/
 
 ### 深度检查（用 SkillSpector）
 
-```bash
-# 安装 SkillSpector（CLI 工具）
-env -u PYTHONPATH uv tool install --python 3.12 \
-  "git+https://github.com/NVIDIA/skillspector.git"
+> ⭐ **本机通常已装好 SkillSpector v2.8.2**。先检测，缺失才安装。
+> ⚠️ **Hermes 环境必须 `env -u PYTHONPATH`**，否则 pydantic 冲突报 `ImportError: module ''langchain_core._api'.'deprecation'' not found`。
 
-# 扫描单个 skill（纯静态，不外发内容）
+```bash
+# a. 检测是否已安装
+if command -v skillspector >/dev/null 2>&1; then
+  env -u PYTHONPATH skillspector --version
+else
+  # 未安装时才执行（需先装 uv）
+  env -u PYTHONPATH uv tool install --python 3.12 \
+    "git+https://github.com/NVIDIA/skillspector.git"
+fi
+
+# b. 扫描单个 skill（纯静态，不外发内容）
 env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
 
-# 扫描整个库
+# c. 扫描整个库
 env -u PYTHONPATH skillspector scan ~/.hermes/skills/ --recursive --no-llm
 ```
 
-> ⚠️ 注意：Hermes 环境会注入 PYTHONPATH，运行 SkillSpector 时必须 `env -u PYTHONPATH`。
+**结果判定（勿盲信总分）**：`0-35` 可信可装；`35-60` 多为规范建议（无 permissions 字段、npx 未 pin 版本）人工核实后通常可接受；`>60` 逐条核查 HIGH/CRITICAL 是否指向真实危险代码，全为误报则记录后通过（本库实测 token-efficient-repo 59/100 HIGH 但全为规范项）。
 
 ## 常见风险模式
 
