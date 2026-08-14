@@ -30,13 +30,43 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 | **入口单一** | 每个功能只有一个明确的 CLI/API 入口 |
 | **自描述边界** | 模块边界清晰，依赖单向，agent 只读相关文件 |
 
-## 三步工作流
+## 五步工作流
 
-### 第一步：审计（Audit）
+### 第一步：安全扫描（Security Scan）
+
+在开始优化之前，先检查项目是否安全可信。详见 `references/security-scan-guide.md`。
+
+**1.1 快速安全检查**
+
+```bash
+bash scripts/security-scan.sh /path/to/project
+```
+
+**1.2 安全检查清单**
+
+- [ ] 来源可信（作者/组织、star 数、最近更新）
+- [ ] 有开源协议（LICENSE 文件）
+- [ ] 无危险代码（eval、exec、未固定版本的 npx）
+- [ ] 无硬编码 API Key 或 Token
+- [ ] 无敏感文件（.env、.pem、.key）
+- [ ] 无外链发送数据（可疑的 curl/wget 到非官方地址）
+- [ ] 有 permissions 声明（如果支持）
+- [ ] 脚本文件数量合理，可审查
+
+**1.3 误报处理**
+
+自动化扫描工具偏向保守标记，常见误报包括：
+- 含真实脚本的官方工具被标记为 HIGH
+- CDN 库引用被标记为「外部传输」
+- 文档中的 SEO 链接被标记为「隐藏指令」
+
+**遇到 HIGH 评分不要直接拒绝，先看具体命中再判断。**
+
+### 第二步：审计（Audit）
 
 扫描项目，输出 token 浪费报告。逐项检查：
 
-**1.1 文件级 token 浪费**
+**2.1 文件级 token 浪费**
 
 | 检查项 | 问题 | 严重程度 |
 |--------|------|----------|
@@ -48,7 +78,7 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 | 配置文件（pyproject.toml / package.json / Makefile）无说明 | agent 不确定哪些是开发依赖 | 🟡 中 |
 | 测试文件在根目录 | agent 把测试当核心代码读 | 🟢 低 |
 
-**1.2 结构级 token 浪费**
+**2.2 结构级 token 浪费**
 
 | 检查项 | 问题 |
 |--------|------|
@@ -57,7 +87,7 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 | 类和函数签名无类型注释 | agent 读实现体以理解接口 |
 | 文档和代码分离太远 | agent 读完文档再去代码里找对应 |
 
-**1.3 快速审计脚本**
+**2.3 快速审计脚本**
 
 如果项目有 shell 环境，运行 `scripts/audit.sh` 获取文件大小和结构统计：
 
@@ -99,15 +129,15 @@ bash scripts/audit.sh /path/to/project
 - 优化后目标：约 {N/3} token（r/o AGENTS.md → 核心文件）
 ```
 
-### 第二步：优化（Optimize）
+### 第三步：优化（Optimize）
 
 按优先级执行以下操作：
 
-**2.1 加 AGENTS.md（最高优先级）**
+**3.1 加 AGENTS.md（最高优先级）**
 
 在项目根目录创建 `AGENTS.md`，格式见 `references/agent-md-template.md`。
 
-**2.2 精简 README（高优先级）**
+**3.2 精简 README（高优先级）**
 
 在 README 顶部加「10 秒速览」区（≤10 行，让 agent 立刻判断是否与己相关），其余内容分拆到 `docs/` 目录：
 
@@ -128,21 +158,21 @@ bash scripts/audit.sh /path/to/project
 {以下为详细内容，agent 需要时再读}
 ```
 
-**2.3 精简 SKILL.md（如果项目含 SKILL.md）**
+**3.3 精简 SKILL.md（如果项目含 SKILL.md）**
 
 - 确保 SKILL.md 的 `description` 字段 ≤60 字符（触发用）
 - 将 SKILL.md 主体限制在 ≤300 行，深层逻辑移进 `references/`
 - 在 SKILL.md 顶部加「何时读哪个文件」表格
 
-**2.4 优化项目结构（中优先级）**
+**3.4 优化项目结构（中优先级）**
 
 - 将 `promo.html`、`demo/`、`examples/` 等非核心文件移入 `docs/` 或项目子目录
 - 确保 `pyproject.toml` / `package.json` 等元数据文件中的 `description` 字段准确（agent 常读它）
 - 为 >10KB 的源文件加内部目录注释（`# ════ 函数名 ════`）
 
-### 第三步：验证（Verify）
+### 第四步：验证（Verify）
 
-**3.1 自检清单**
+**4.1 自检清单**
 
 - [ ] AGENTS.md 已创建，agent 能 3 秒定位入口
 - [ ] 项目根目录无 agent 可能误读的无关文件
@@ -152,7 +182,7 @@ bash scripts/audit.sh /path/to/project
 - [ ] 所有元数据文件（package.json/pyproject.toml）的 description 字段准确
 - [ ] 依赖方向单向：核心模块不反向依赖 CLI/测试
 
-**3.2 token 节省估算**
+**4.2 token 节省估算**
 
 ```markdown
 ### Token 节省估算
@@ -164,17 +194,17 @@ bash scripts/audit.sh /path/to/project
 | 估算 token | ~{Y} | ~{Y/3} | ~{Y/3} token |
 |```
 
-### 第四步：安全扫描（Security Scan）⭐ 新增
+### 第五步：安全扫描（Security Scan）⭐ 最终安检
 
 安装第三方 skill 前，用安全检查确认是否可信。详见 `references/security-scan-guide.md`。
 
-**4.1 快速安全检查（用本项目的脚本）**
+**5.1 快速安全检查（用本项目的脚本）**
 
 ```bash
 bash scripts/security-scan.sh /path/to/skill
 ```
 
-**4.2 深度安全检查（用 SkillSpector）**
+**5.2 深度安全检查（用 SkillSpector）**
 
 ```bash
 # 安装（需先装 uv）
@@ -185,7 +215,7 @@ env -u PYTHONPATH uv tool install --python 3.12 \
 env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
 ```
 
-**4.3 安全检查清单**
+**5.3 安全检查清单**
 
 - [ ] 来源可信（作者/组织、star 数、最近更新）
 - [ ] 有开源协议（LICENSE 文件）
@@ -196,7 +226,7 @@ env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
 - [ ] 有 permissions 声明（如果支持）
 - [ ] 脚本文件数量合理，可审查
 
-**4.4 误报处理**
+**5.4 误报处理**
 
 自动化扫描工具（如 SkillSpector）偏向保守标记，常见误报：
 - 含真实脚本的官方工具被标记为 HIGH（如 NFT 官方工具、视频渲染工具）
@@ -228,11 +258,12 @@ env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
 **输入：** 「优化我的 douyin-to-obsidian 项目，让它对 agent 省 token」
 
 **输出：**
-1. 审计 → 发现：无 AGENTS.md、promo.html 在根目录、README 混装
-2. 加 AGENTS.md → 指引 agent 从 `scripts/douyin_extract.py` 入口、跳过 `promo.html`
-3. 精简 README → 顶部加「10 秒速览」
-4. 移 promo.html → `docs/promo.html`
-5. 验证 → 首读文件从 15 个→ 5 个，token 节省约 60%
+1. 安全检查 → 通过（MIT 协议，无危险代码，来源可信）
+2. 审计 → 发现：无 AGENTS.md、promo.html 在根目录、README 混装
+3. 加 AGENTS.md → 指引 agent 从 `scripts/douyin_extract.py` 入口、跳过 `promo.html`
+4. 精简 README → 顶部加「10 秒速览」
+5. 移 promo.html → `docs/promo.html`
+6. 验证 → 首读文件从 15 个→ 5 个，token 节省约 60%
 
 **输入：** 「优化我的 Node.js 项目 /path/to/project」
 
