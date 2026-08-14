@@ -6,7 +6,7 @@
 
 ## 10 秒速览
 - **这是什么**：Agent Skill，**五步闭环**优化任意项目让 agent 省 token：安全扫描 → 审计 → 优化 → 验证 → 安全扫描
-- **什么时候用**：有人说「用我的项目 token 太高」「怎么让 agent 读我的项目更快」「检查这个 skill 安不安全」
+- **什么时候用**：有人说「用我的项目 token 太高」「怎么让 agent 读我的项目更快」「检查这个 skill 安不安全」**「优化我装好的 skill 省 token」**
 - **什么时候不用**：项目已极简（单文件 CLI）、闭源项目不可改结构
 - **快速开始**：`bash scripts/audit.sh .` 扫描当前项目
 - **依赖**：仅 bash（深度扫描可选装 NVIDIA SkillSpector）
@@ -24,6 +24,20 @@
 5. **安全扫描** — 优化后重新过安全关，重点核查新增/变更文件（出门放行）
 
 > **闭环设计**：第 1 步「进门检查」确保优化前项目可信；第 5 步「出门放行」确保优化引入的新脚本/文件仍安全，才能交付。
+
+## 优化已部署的 Agent Skill（典型场景）
+
+已安装到 `~/.hermes/skills/`、`~/.agents/skills/` 的 skill 本身就是项目目录（SKILL.md + references/ + scripts/），**同样适用本流程**。对真实技能库审计的典型浪费点：
+
+| 浪费类型 | 实测示例 | 影响 |
+|---------|---------|------|
+| 🔴 大 SKILL.md 无分层（>15KB） | 某前端 skill 85KB、论文写作 70KB、人物视角 44KB | 每次调用全量加载 → 单次 ~11K–21K tokens |
+| 🟡 description 超 60 字符 | 某动画 skill 664 字符、生图系 600+ 字符（共 75 个超限） | 技能索引被截断至 57 字符，触发路由失准 |
+| 🔵 缺 AGENTS.md 导航 | 多数 skill 无入口导航 | agent 只能遍历全部文件判断相关性 |
+
+**优化收益**：大 SKILL.md 分层到 `references/` → 单次加载降 50–66%；description 压到 60 内 → 触发命中率显著提升。
+
+> 用法：`用 token-efficient-repo 优化我装好的 skill` 或直接扫目录 `bash scripts/audit.sh ~/.hermes/skills/`。
 
 ## 效果
 
