@@ -202,7 +202,13 @@ bash scripts/audit.sh /path/to/project
 
 ### 第五步：安全扫描（Security Scan）⭐ 最终安检
 
-安装第三方 skill 前，用安全检查确认是否可信。详见 `references/security-scan-guide.md`。
+**与第 1 步的区别：第 1 步是「进门检查」（优化前项目是否可信），本步是「出门放行」（优化后是否仍安全）。** 优化可能新增了脚本、重写了 README、移动了文件——这些**新引入的变数必须重新过安全关**，才能算交付。详见 `references/security-scan-guide.md`。
+
+**5.0 重点核查优化过程新增/变更项**
+- [ ] 优化中新增的 `.sh/.py` 脚本是否无 eval/exec、无外发数据
+- [ ] 新写的 AGENTS.md 是否含隐藏指令 / 覆盖 agent 系统提示
+- [ ] 重写的 README 是否仍无硬编码 API Key
+- [ ] 移动后的文件路径是否正确、无越权路径（`../`、绝对路径外传）
 
 **5.1 快速安全检查（用本项目的脚本）**
 
