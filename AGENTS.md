@@ -18,12 +18,14 @@
 | `references/agent-md-template.md` | AGENTS.md 模板，可直接复制使用 | ⚠️ 需要时读 |
 | `references/audit-example.md` | 审计报告示例 | ⚠️ 需要时读 |
 | `references/token-estimation-report.md` | 真实 Token 扫描与成本对比报告（含 128 skill 实测数据） | ⚠️ 需要时读 |
+| `references/security-scan-guide.md` | 技能安全检查指南（含检查清单、脚本、SkillSpector 用法） | ⚠️ 需要时读 |
 
 ## 工具脚本
 
 | 文件 | 作用 | 是否必读 |
 |------|------|----------|
 | `scripts/audit.sh` | 快速扫描项目文件大小和结构，辅助审计 | ⚠️ 需要时读 |
+| `scripts/security-scan.sh` | 技能安全检查器，检查危险代码、敏感文件、权限声明 | ⚠️ 需要时读 |
 
 ## 可直接跳过的文件
 
@@ -39,5 +41,6 @@
 ## 快速验证
 
 ```bash
-bash scripts/audit.sh .           # 扫描本项目的文件结构
-grep 'description' SKILL.md       # 确认 description ≤60 字符
+bash scripts/audit.sh .                 # 扫描本项目的文件结构
+bash scripts/security-scan.sh .         # 扫描本项目的安全风险
+grep 'description' SKILL.md             # 确认 description ≤60 字符

@@ -15,6 +15,7 @@ description: 当用户要优化项目结构节省 agent token 消耗时使用。
 | `references/agent-md-template.md` | 需要加 AGENTS.md 时 |
 | `references/audit-example.md` | 需要参考审计报告格式时 | ⚠️ 需要时读 |
 | `references/token-estimation-report.md` | 需要参考真实 Token 成本数据与财务对比时 | ⚠️ 需要时读 |
+| `references/security-scan-guide.md` | 需要检查第三方 skill 安全性时 | ⚠️ 需要时读 |
 | `scripts/audit.sh` | 需要快速扫描项目文件结构时 |
 
 ## 核心原则
@@ -161,7 +162,48 @@ bash scripts/audit.sh /path/to/project
 | 首读文件数 | {N} | {N/3} | ~{N/3} 个 |
 | 必读 KB | {X} KB | {X/3} KB | ~{X/3} KB |
 | 估算 token | ~{Y} | ~{Y/3} | ~{Y/3} token |
+|```
+
+### 第四步：安全扫描（Security Scan）⭐ 新增
+
+安装第三方 skill 前，用安全检查确认是否可信。详见 `references/security-scan-guide.md`。
+
+**4.1 快速安全检查（用本项目的脚本）**
+
+```bash
+bash scripts/security-scan.sh /path/to/skill
 ```
+
+**4.2 深度安全检查（用 SkillSpector）**
+
+```bash
+# 安装（需先装 uv）
+env -u PYTHONPATH uv tool install --python 3.12 \
+  "git+https://github.com/NVIDIA/skillspector.git"
+
+# 扫描
+env -u PYTHONPATH skillspector scan /path/to/skill/ --no-llm
+```
+
+**4.3 安全检查清单**
+
+- [ ] 来源可信（作者/组织、star 数、最近更新）
+- [ ] 有开源协议（LICENSE 文件）
+- [ ] 无危险代码（eval、exec、未固定版本的 npx）
+- [ ] 无硬编码 API Key 或 Token
+- [ ] 无敏感文件（.env、.pem、.key）
+- [ ] 无外链发送数据（可疑的 curl/wget 到非官方地址）
+- [ ] 有 permissions 声明（如果支持）
+- [ ] 脚本文件数量合理，可审查
+
+**4.4 误报处理**
+
+自动化扫描工具（如 SkillSpector）偏向保守标记，常见误报：
+- 含真实脚本的官方工具被标记为 HIGH（如 NFT 官方工具、视频渲染工具）
+- CDN 库引用（jsdelivr、unpkg）被标记为「外部传输」
+- 文档中的 SEO 链接被标记为「隐藏指令」
+
+**遇到 HIGH 评分不要直接拒绝，先看具体命中再判断。**
 
 ## 输出格式
 

@@ -29,6 +29,20 @@
 | 必读 KB | 50 KB | 15 KB | ~70% |
 | 估算 token | ~15K | ~5K | ~66% |
 
+## 安全扫描（新增）
+
+安装第三方 skill 前，用内置安全检查确认是否可信：
+
+```bash
+# 快速扫描单个 skill
+bash scripts/security-scan.sh /path/to/skill
+
+# 递归扫描整个库
+bash scripts/security-scan.sh --recursive ~/.hermes/skills/
+```
+
+详见 [`references/security-scan-guide.md`](references/security-scan-guide.md)。
+
 ## 真实案例：Hermes 128 Skill 全库扫描
 
 作为参考，对 Hermes 全库 128 个 skill 做了完整安全扫描和 Token 估算：
